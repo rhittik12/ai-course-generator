@@ -11,16 +11,17 @@ import { Button } from '@/components/ui/button'
 import { GenerateChapterContent_AI } from '@/configs/AiModel'
 import LoadingDialog from '../_components/LoadingDialog'
 import service from '@/configs/service'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 
-function CourseLayout({ params }) {
+function CourseLayout() {
   const { user } = useUser();
   const [course,setCourse]=useState([]);
   const [loading,setLoading]=useState(false);
   const router=useRouter();
+  const params = useParams();
   useEffect(() => {
-    params && GetCourse();
-  }, [params,user])
+    if (params?.courseId && user) GetCourse();
+  }, [params?.courseId,user])
 
   const GetCourse = async () => {
     const result = await db.select().from(CourseList)

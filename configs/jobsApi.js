@@ -1,14 +1,7 @@
 import axios from "axios";
 
-// Base URL and API Key for the external API
-const API_BASE_URL = "https://jobs-api14.p.rapidapi.com/v2";
-const API_KEY = process.env.NEXT_PUBLIC_RAPIDAPI_KEY;
-
-// Headers for all API requests
-const headers = {
-  "X-RapidAPI-Key": API_KEY,
-  "X-RapidAPI-Host": "jobs-api14.p.rapidapi.com",
-};
+// Use internal API route which proxies to the configured Jobs API
+const INTERNAL_API = "/api/jobs";
 
 /**
  * Fetch jobs from the API.
@@ -18,14 +11,20 @@ const headers = {
  */
 export const fetchJobs = async (params) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/list`, {
-      headers,
-      params,
+    const response = await axios.get(`${INTERNAL_API}`, {
+      params: { endpoint: "list", ...params },
     });
     return response.data;
   } catch (error) {
-    console.error("Error fetching jobs:", error.message);
-    throw new Error("Failed to fetch jobs.");
+    const server = error?.response?.data;
+    const msg =
+      (typeof server === 'string' && server) ||
+      server?.error ||
+      (server ? JSON.stringify(server) : '') ||
+      error.message ||
+      'Failed to fetch jobs.';
+    console.error("Error fetching jobs:", server || error.message);
+    throw new Error(msg);
   }
 };
 
@@ -37,14 +36,20 @@ export const fetchJobs = async (params) => {
  */
 export const fetchJobTitles = async (params) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/salary/getJobTitles`, {
-      headers,
-      params,
+    const response = await axios.get(`${INTERNAL_API}`, {
+      params: { endpoint: "salary/getJobTitles", ...params },
     });
     return response.data;
   } catch (error) {
-    console.error("Error fetching job titles:", error.message);
-    throw new Error("Failed to fetch job titles.");
+    const server = error?.response?.data;
+    const msg =
+      (typeof server === 'string' && server) ||
+      server?.error ||
+      (server ? JSON.stringify(server) : '') ||
+      error.message ||
+      'Failed to fetch job titles.';
+    console.error("Error fetching job titles:", server || error.message);
+    throw new Error(msg);
   }
 };
 
@@ -56,13 +61,19 @@ export const fetchJobTitles = async (params) => {
  */
 export const fetchSalaryRange = async (params) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/salary/getSalaryRange`, {
-      headers,
-      params,
+    const response = await axios.get(`${INTERNAL_API}`, {
+      params: { endpoint: "salary/getSalaryRange", ...params },
     });
     return response.data;
   } catch (error) {
-    console.error("Error fetching salary range:", error.message);
-    throw new Error("Failed to fetch salary range.");
+    const server = error?.response?.data;
+    const msg =
+      (typeof server === 'string' && server) ||
+      server?.error ||
+      (server ? JSON.stringify(server) : '') ||
+      error.message ||
+      'Failed to fetch salary range.';
+    console.error("Error fetching salary range:", server || error.message);
+    throw new Error(msg);
   }
 };

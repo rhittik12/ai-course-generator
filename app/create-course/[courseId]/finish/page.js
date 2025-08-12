@@ -6,16 +6,17 @@ import { and, eq } from 'drizzle-orm';
 
 import React, { useEffect, useState } from 'react'
 import CourseBasicInfo from '../_components/CourseBasicInfo';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { HiOutlineClipboardDocumentCheck } from "react-icons/hi2";
 
-function FinishScreen({params}) {
+function FinishScreen() {
     const { user } = useUser();
     const [course,setCourse]=useState([]);
     const router=useRouter();
+    const params = useParams();
     useEffect(() => {
-      params && GetCourse();
-    }, [params,user])
+      if (params?.courseId && user) GetCourse();
+    }, [params?.courseId, user])
   
     const GetCourse = async () => {
       const result = await db.select().from(CourseList)

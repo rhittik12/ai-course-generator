@@ -22,9 +22,8 @@ function CourseCard({course,refreshData,displayUser=false}) {
         }
     }
 
-  return (
-    <div className='shadow-sm rounded-lg border p-2
-     cursor-pointer mt-4 hover:border-primary'>
+    return (
+        <div className='shadow-sm rounded-lg border p-2 cursor-pointer mt-4 hover:border-primary bg-card text-card-foreground'>
         <Link href={'/course/'+course?.courseId}>
             <Image alt="placeholder"  src={course?.courseBanner} width={300} height={200}
             className='w-full h-[200px] object-cover rounded-lg'
@@ -38,12 +37,11 @@ function CourseCard({course,refreshData,displayUser=false}) {
             ><HiMiniEllipsisVertical/></DropdownOption>}
             </h2>
             
-            <p className='text-sm text-gray-400 my-1'>{course?.category}</p>
+            <p className='text-sm text-gray-500 dark:text-gray-400 my-1'>{course?.category}</p>
             <div className='flex items-center justify-between'>
-                <h2 className='flex gap-2 items-center
-                 p-1 bg-purple-50 text-primary text-sm rounded-sm'>
+                <h2 className='flex gap-2 items-center p-1 bg-purple-50 dark:bg-neutral-800/80 text-primary text-sm rounded-sm'>
                     <HiOutlineBookOpen/>{course?.courseOutput?.course?.numberOfChapters} Chapters</h2>
-                <h2 className='text-sm bg-purple-50 text-primary p-1 rounded-sm'>{course?.level}</h2>
+                <h2 className='text-sm bg-purple-50 dark:bg-neutral-800/80 text-primary p-1 rounded-sm'>{course?.level}</h2>
             
             </div>
           {!displayUser&&  <div className='flex gap-2 items-center mt-2'>

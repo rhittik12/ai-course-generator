@@ -1,18 +1,15 @@
 "use client";
 import Image from 'next/image';
-import React, { useContext } from 'react';
+import React from 'react';
 import { HiHome } from "react-icons/hi2";
 import { MdOutlineExplore } from "react-icons/md";
-import { GrUpgrade } from "react-icons/gr";
 import { TbLogout2 } from "react-icons/tb";
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Progress } from "@/components/ui/progress";
-import { UserCourseListContext } from '@/app/_context/UserCourseListContext';
 import { BsFillSuitcaseLgFill } from "react-icons/bs";
 
 const SideBar = () => {
-  const { userCourseList } = useContext(UserCourseListContext);
+  // No user-specific gating; simple navigation menu
 
   const Menu = [
     {
@@ -29,18 +26,12 @@ const SideBar = () => {
     },
     {
       id: 3,
-      name: 'Upgrade',
-      icon: <GrUpgrade />,
-      path: '/dashboard/upgrade',
-    },
-    {
-      id: 4,
       name: 'Jobs',
       icon: <BsFillSuitcaseLgFill />      ,
       path: '/dashboard/jobs',
     },
     {
-      id: 5,
+      id: 4,
       name: 'Logout',
       icon: <TbLogout2 />,
       path: '/dashboard/logout',
@@ -69,13 +60,7 @@ const SideBar = () => {
           </li>
         ))}
       </ul>
-      <div className="absolute bottom-10 w-[80%]">
-        <Progress value={(userCourseList?.length / 5) * 100} />
-        <h2 className="text-sm my-2">{userCourseList?.length} out of 5 created</h2>
-        <h2 className="text-xs text-gray-500">
-          Upgrade your plan for unlimited course generation
-        </h2>
-      </div>
+  {/* Removed upgrade quota/progress UI */}
     </div>
   );
 };

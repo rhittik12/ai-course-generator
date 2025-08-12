@@ -13,8 +13,11 @@ const {
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
 
+const PRIMARY_MODEL = process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-1.5-flash";
+const FALLBACK_MODEL = process.env.NEXT_PUBLIC_GEMINI_FALLBACK_MODEL || "gemini-1.5-flash-8b";
+
 const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash",
+  model: PRIMARY_MODEL,
 });
 
 const generationConfig = {
@@ -25,27 +28,91 @@ const generationConfig = {
   responseMimeType: "application/json",
 };
 
+const courseLayoutHistory = [
+  {
+    role: "user",
+    parts: [
+      {
+        text:
+          "Generate A Course Tutorial on Following Detail With field as Course Name, Description, Along with Chapter \nName ,about, Duration: Category: 'Programming',\nTopic: Python, Level:Basic, Duration: 1 hours,\nNoOf Chapters:5, in JSON format",
+      },
+    ],
+  },
+  {
+    role: "model",
+    parts: [
+      {
+        text:
+          '```json\n{\n  "course": {\n    "name": "Python Programming for Beginners",\n    "description": "Learn the fundamentals of Python programming, from basic syntax to core concepts like variables, data types, loops, and functions. This course is designed for absolute beginners with no prior programming experience.",\n    "chapters": [\n      {\n        "name": "Introduction to Python",\n        "about": "This chapter covers the history of Python, its features, and why it\'s a popular choice for beginners. We\'ll also set up your development environment and write your first Python program.",\n        "duration": "15 minutes"\n      },\n      {\n        "name": "Variables and Data Types",\n        "about": "Learn about different data types in Python, such as integers, floats, strings, and booleans. We\'ll explore how to assign values to variables and perform basic operations on them.",\n        "duration": "20 minutes"\n      },\n      {\n        "name": "Control Flow and Loops",\n        "about": "Discover how to control the flow of your Python programs using conditional statements (if, elif, else). You\'ll learn about loops (for, while) and how to iterate over collections of data.",\n        "duration": "25 minutes"\n      },\n      {\n        "name": "Functions and Modules",\n        "about": "This chapter teaches you how to create and use your own functions to organize code and improve reusability. We\'ll also explore how to import and use modules to extend your Python capabilities.",\n        "duration": "20 minutes"\n      },\n      {\n        "name": "Lists, Tuples, and Dictionaries",\n        "about": "Learn about different data structures in Python, including lists (ordered collections), tuples (immutable sequences), and dictionaries (key-value pairs). You\'ll explore common operations and methods associated with each structure.",\n        "duration": "20 minutes"\n      }\n    ],\n    "duration": "1 hour",\n    "category": "Programming",\n    "topic": "Python",\n    "level": "Basic",\n    "noOfChapters": 5\n  }\n}\n```\n',
+      },
+    ],
+  },
+];
+
 export const GenerateCourseLayout_AI = model.startChat({
   generationConfig,
-  history: [
-    {
-      role: "user",
-      parts: [
-        {
-          text: "Generate A Course Tutorial on Following Detail With field as Course Name, Description, Along with Chapter \nName ,about, Duration: Category: 'Programming',\nTopic: Python, Level:Basic, Duration: 1 hours,\nNoOf Chapters:5, in JSON format",
-        },
-      ],
-    },
-    {
-      role: "model",
-      parts: [
-        {
-          text: '```json\n{\n  "course": {\n    "name": "Python Programming for Beginners",\n    "description": "Learn the fundamentals of Python programming, from basic syntax to core concepts like variables, data types, loops, and functions. This course is designed for absolute beginners with no prior programming experience.",\n    "chapters": [\n      {\n        "name": "Introduction to Python",\n        "about": "This chapter covers the history of Python, its features, and why it\'s a popular choice for beginners. We\'ll also set up your development environment and write your first Python program.",\n        "duration": "15 minutes"\n      },\n      {\n        "name": "Variables and Data Types",\n        "about": "Learn about different data types in Python, such as integers, floats, strings, and booleans. We\'ll explore how to assign values to variables and perform basic operations on them.",\n        "duration": "20 minutes"\n      },\n      {\n        "name": "Control Flow and Loops",\n        "about": "Discover how to control the flow of your Python programs using conditional statements (if, elif, else). You\'ll learn about loops (for, while) and how to iterate over collections of data.",\n        "duration": "25 minutes"\n      },\n      {\n        "name": "Functions and Modules",\n        "about": "This chapter teaches you how to create and use your own functions to organize code and improve reusability. We\'ll also explore how to import and use modules to extend your Python capabilities.",\n        "duration": "20 minutes"\n      },\n      {\n        "name": "Lists, Tuples, and Dictionaries",\n        "about": "Learn about different data structures in Python, including lists (ordered collections), tuples (immutable sequences), and dictionaries (key-value pairs). You\'ll explore common operations and methods associated with each structure.",\n        "duration": "20 minutes"\n      }\n    ],\n    "duration": "1 hour",\n    "category": "Programming",\n    "topic": "Python",\n    "level": "Basic",\n    "noOfChapters": 5\n  }\n}\n```\n',
-        },
-      ],
-    },
-  ],
+  history: courseLayoutHistory,
 });
+
+function isQuotaError(err) {
+  const msg = (err && (err.message || err.toString())) || "";
+  const status = err && (err.status || err.code);
+  return status === 429 || /quota|rate limit/i.test(msg);
+}
+
+function parseRetryDelayMs(err) {
+  try {
+    // SDK may attach a structured payload
+    const retry = err?.errorDetails?.find?.(d => d['@type']?.includes('RetryInfo'))
+      || (Array.isArray(err) ? err : []).find?.(d => d['@type']?.includes?.('RetryInfo'));
+    const delay = retry?.retryDelay; // e.g., "3s"
+    if (typeof delay === 'string' && delay.endsWith('s')) {
+      return Math.max(0, Math.round(parseFloat(delay) * 1000));
+    }
+  } catch {}
+  return 3000; // default 3s
+}
+
+async function sendWithRetry(chat, prompt, { maxRetries = 2 } = {}) {
+  let attempt = 0;
+  // First attempt + retries
+  while (true) {
+    try {
+      return await chat.sendMessage(prompt);
+    } catch (err) {
+      if (attempt >= maxRetries || !isQuotaError(err)) {
+        throw err;
+      }
+      const backoff = parseRetryDelayMs(err) * Math.pow(2, attempt);
+      await new Promise(res => setTimeout(res, backoff));
+      attempt += 1;
+    }
+  }
+}
+
+export async function sendCourseLayoutMessage(prompt) {
+  // Try primary model with retries, then fallback model if quota exceeded
+  const attempts = [PRIMARY_MODEL, FALLBACK_MODEL].filter(Boolean);
+  let lastErr;
+  for (let i = 0; i < attempts.length; i++) {
+    const m = genAI.getGenerativeModel({ model: attempts[i] });
+    const chat = m.startChat({ generationConfig, history: courseLayoutHistory });
+    try {
+      return await sendWithRetry(chat, prompt, { maxRetries: 2 });
+    } catch (err) {
+      lastErr = err;
+      if (isQuotaError(err) && i < attempts.length - 1) {
+        continue; // try next model
+      }
+      break;
+    }
+  }
+  const friendly = new Error(
+    "AI request failed. You may have hit the free tier daily quota. Try again later, switch to a fallback model, or add billing."
+  );
+  friendly.cause = lastErr;
+  throw friendly;
+}
 
 
 export const GenerateChapterContent_AI = model.startChat({

@@ -3,7 +3,6 @@ import {
     Dialog,
     DialogClose,
     DialogContent,
-    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
@@ -42,7 +41,7 @@ function EditCourseBasicInfo({course,refreshData}) {
     <DialogContent>
         <DialogHeader>
         <DialogTitle>Edit Course Title & Description</DialogTitle>
-        <DialogDescription>
+        <div className="text-sm text-muted-foreground">
             <div className='mt-3'>
                 <label>Course Title</label>
                 <Input defaultValue={course?.courseOutput?.course?.name}
@@ -56,10 +55,10 @@ function EditCourseBasicInfo({course,refreshData}) {
                 onChange={(event)=>setDescription(event?.target.value)}
                 />
             </div>
-        </DialogDescription>
+        </div>
         </DialogHeader>
         <DialogFooter>
-            <DialogClose>
+            <DialogClose asChild>
                 <Button onClick={onUpdateHandler}>Update</Button>
             </DialogClose>
         </DialogFooter>

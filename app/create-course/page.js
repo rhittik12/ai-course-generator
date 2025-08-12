@@ -6,7 +6,15 @@ import SelectCategory from "./_components/SelectCategory";
 import TopicDescription from "./_components/TopicDescription";
 import SelectOption from "./_components/SelectOption";
 import { UserInputContext } from "../_context/UserInputContext";
-import { GenerateCourseLayout_AI } from "@/configs/AiModel";
+import { sendCourseLayoutMessage } from "@/configs/AiModel";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import LoadingDialog from "./_components/LoadingDialog";
 import { CourseList } from "@/configs/schema";
 import { useUser } from "@clerk/nextjs";
@@ -37,6 +45,7 @@ const CreateCourse = () => {
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
   const { userCourseInput, setUserCourseInput } = useContext(UserInputContext);
   const {user} = useUser();
   const router=useRouter();
@@ -60,16 +69,28 @@ const CreateCourse = () => {
   };
 
   const GenerateCourseLayout = async () => {
+    setError(null)
     setLoading(true)
     const BASIC_PROMPT = 'Generate A Course Tutorial on Following Detail With field as Course Name, Description, Along with Chapter'
     const USER_INPUT_PROMPT = `Category: ${userCourseInput?.category}, Topic: ${userCourseInput?.topic}, Level:${userCourseInput?.level}, Duration: ${userCourseInput?.duration}, NoOf Chapters:${userCourseInput?.noOfChapters}`
     const FINAL_PROMPT = BASIC_PROMPT + USER_INPUT_PROMPT
     console.log(FINAL_PROMPT);
-    
-    const result = await GenerateCourseLayout_AI.sendMessage(FINAL_PROMPT);
-    console.log(JSON.parse(result.response?.text()))
-    setLoading(false)
-    SaveCourseLayoutInDb(JSON.parse(result.response?.text()))
+    try {
+      // Prefer server endpoint to keep keys server-side
+      const res = await fetch('/api/ai/generate-course', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: FINAL_PROMPT })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'AI request failed')
+      setLoading(false)
+      SaveCourseLayoutInDb(data)
+    } catch (err) {
+      console.error('AI error', err)
+      setLoading(false)
+      setError(err?.message || 'AI request failed')
+    }
   }
   
   const SaveCourseLayoutInDb = async (courseLayout) => {
@@ -152,6 +173,20 @@ const CreateCourse = () => {
         </div>
       </div>
       <LoadingDialog loading={loading}/>
+      {/* Error dialog */}
+      <AlertDialog open={!!error}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>We hit a limit</AlertDialogTitle>
+            <AlertDialogDescription>
+              {error}
+              <br />
+              Tips: Wait a few minutes and retry, or set NEXT_PUBLIC_GEMINI_MODEL / NEXT_PUBLIC_GEMINI_FALLBACK_MODEL to a less busy model, or add billing to raise quotas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogAction onClick={() => setError(null)}>Close</AlertDialogAction>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

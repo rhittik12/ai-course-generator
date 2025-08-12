@@ -1,128 +1,106 @@
-# Custom Course Creator - Full Stack Web Application
+# AI Course Generator
 
-This is a full-stack web application built using **Next.js**, **React**, and **TailwindCSS**, designed to enable users to create custom courses with AI-generated content and curated video resources. The app utilizes the **Gemini API** for AI content generation, the **YouTube API** for video integration, and **Clerk** for user authentication.
+Create engaging courses with AI in minutes. Built with Next.js App Router, Drizzle ORM (Neon Postgres), Clerk auth, TailwindCSS, and shadcn/ui.
 
 ## Features
-- **Next.js** for server-side rendering and optimized routing.
-- **React** for building interactive UI components.
-- **Drizzle ORM** for managing database interactions.
-- **TailwindCSS** for modern and responsive UI design.
-- **Shadcn UI** for enhanced UI components.
-- **Clerk** for user authentication and access control.
-- **Gemini API** for generating AI-driven course content.
-- **YouTube API** for video integration and curation.
+- Next.js 15 App Router, server and client components
+- Clerk authentication with protected dashboard
+- Drizzle ORM + Neon serverless Postgres
+- Gemini API for course and chapter generation
+- YouTube API for video curation per chapter
+- TailwindCSS design system, dark mode toggle, shadcn/radix components
 
-## Table of Contents
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [Technologies Used](#technologies-used)
-- [API Integration](#api-integration)
-- [Contributing](#contributing)
-- [License](#license)
+## Requirements
+- Node.js >= 18.18
+- A Neon Postgres database
+- Accounts/keys: Clerk, Google Gemini, Firebase (Storage), YouTube Data API v3
 
-## Installation
-
-### Prerequisites
-- **Node.js** >= 14.x
-- **npm** or **yarn**
-- **PostgreSQL** (for database with Drizzle ORM)
-
-### Clone the repository
-```bash
-git clone https://github.com/rhittik12/ai-course-generator.git
-cd AI-Course-Generator
-```
-
-### Install dependencies
+## Quick start
+1) Install dependencies
 ```bash
 npm install
-# or
-yarn install
 ```
 
-### Set up environment variables
-Create a `.env.local` file in the root directory and configure the following variables:
+2) Environment variables (create `.env.local`)
+```env
+# Clerk
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
+CLERK_SECRET_KEY=sk_live_...
 
-```plaintext
-NEXT_PUBLIC_CLERK_FRONTEND_API=<your-clerk-frontend-api>
-CLERK_API_KEY=<your-clerk-api-key>
+# Database (Neon)
+NEXT_PUBLIC_DB_CONNECTION_STRING=postgresql://user:pass@ep-xxxxx.neon.tech/db?sslmode=require
 
-GEMINI_API_KEY=<your-gemini-api-key>
-YOUTUBE_API_KEY=<your-youtube-api-key>
+# AI + Integrations
+NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_key
+NEXT_PUBLIC_YOUTUBE_API_KEY=your_youtube_key
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_key
 
-DATABASE_URL=postgresql://<username>:<password>@<host>:<port>/<database-name>
+# Site
+NEXT_PUBLIC_HOST_NAME=http://localhost:3000
 
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+# Optional jobs provider (used by pages/api/jobs)
+JOBS_API_BASE_URL=https://example-jobs-api.com/v1
+JOBS_API_KEY=your_jobs_api_key
+JOBS_API_HOST=example-jobs-api.com
 ```
 
-### Database Migration
-Ensure you have PostgreSQL installed and create a database. Use Drizzle ORM to set up the schema:
-
+3) Ensure DB tables
+- Schema is defined in `configs/schema.js`.
+- If migrations report “No changes” but `chapters` is missing, run the helper:
 ```bash
-npx drizzle-kit migrate:run
+node scripts/create_chapters_table.mjs
 ```
 
-### Run the application
-To start the development server, run:
-
+4) Run the app
 ```bash
 npm run dev
-# or
-yarn dev
+```
+Dev server starts on http://localhost:3000 (or the next available port).
 
-## Configuration
+## Deployment (Vercel)
+1) Push your repo to GitHub
+2) Import project in Vercel
+3) Add environment variables in Vercel Project Settings → Environment Variables
 
-### Clerk
-Clerk provides user authentication for the application. Ensure you set up your project on Clerk's website and configure the necessary API keys in the `.env.local` file.
+Required
+- NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+- CLERK_SECRET_KEY
+- NEXT_PUBLIC_DB_CONNECTION_STRING
+- GEMINI_API_KEY (server-only)
+- NEXT_PUBLIC_GEMINI_API_KEY (optional)
+- NEXT_PUBLIC_GEMINI_MODEL=gemini-1.5-flash
+- NEXT_PUBLIC_GEMINI_FALLBACK_MODEL=gemini-1.5-flash-8b
+- NEXT_PUBLIC_FIREBASE_API_KEY
+- NEXT_PUBLIC_YOUTUBE_API_KEY
+- NEXT_PUBLIC_HOST_NAME=https://YOUR-PROJECT.vercel.app
 
-### Gemini API
-This app leverages the Gemini API to generate AI-driven content for courses. You need to sign up for an API key from Gemini API.
+Optional (Jobs page)
+- JOBS_API_BASE_URL
+- JOBS_API_KEY
+- JOBS_API_HOST
 
-### YouTube API
-For video integration, the application uses the YouTube Data API. You can get an API key from the Google Developer Console.
+4) Clerk & Firebase allowlists
+- Clerk Dashboard → Applications → (your app): add your Vercel domain to Allowed Origins/Redirect URLs
+- Firebase Console → Authentication → Settings → Authorized domains: add your Vercel domain
 
-## Usage
+5) Deploy (Vercel runs `next build`)
+6) Smoke test
+- / (landing)
+- /dashboard (sign-in)
+- /create-course (AI generate via app/api/ai/generate-course)
+- /dashboard/jobs (ensure JOBS_* envs or you’ll see a config hint)
 
-### Creating a Course
-1. Sign Up / Log In: Use Clerk authentication to sign up or log in.
-2. Generate AI Content: Use the Gemini API integration to automatically generate content for your custom course.
-3. Add Video Resources: Search and integrate videos from YouTube using the YouTube API.
-4. Save and Manage Courses: Save courses and manage them through your user profile.
+## Notes
+- Dark mode is toggled by `app/_components/ThemeToggle` and Tailwind `dark` class.
+- Google One Tap is rendered on the client via `app/_components/GoogleOneTapClient` to avoid hydration issues.
+- Jobs widgets use an internal proxy (`pages/api/jobs`). Set `JOBS_*` envs to enable.
 
-### Admin Panel
-Admins can manage user permissions, view generated content, and perform other administrative tasks.
-
-## Technologies Used
-- **Next.js**: React framework with built-in server-side rendering (SSR).
-- **React**: For building dynamic UI components.
-- **Drizzle ORM**: Simple, type-safe ORM for managing PostgreSQL databases.
-- **TailwindCSS**: Utility-first CSS framework for designing responsive UIs.
-- **Shadcn UI**: A modern UI component library for enhanced UI elements.
-- **Clerk**: Authentication solution for user management.
-- **Gemini API**: AI-driven content generation API.
-- **YouTube API**: Used for searching and embedding video resources.
-
-## API Integration
-
-### Clerk API
-Clerk handles user authentication and provides the necessary endpoints for signing up, logging in, and managing users.
-
-### Gemini API
-The Gemini API is used for generating AI-driven content for each course. You can customize content by sending prompts and receiving responses from the API.
-
-### YouTube API
-The YouTube API is integrated for searching video content that can be added to courses. Use the API to curate video playlists directly into the course creation workflow.
-
-## Contributing
-We welcome contributions to this project! If you have any ideas, suggestions, or issues, feel free to submit a pull request or open an issue.
-
-Steps to Contribute:
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature/your-feature`).
-3. Make your changes and commit them (`git commit -m 'Add new feature'`).
-4. Push to the branch (`git push origin feature/your-feature`).
-5. Create a new Pull Request.
+## Scripts
+- `npm run dev` – start dev server
+- `npm run build` – production build
+- `npm run start` – start production server
+- `npm run db:push` – push Drizzle schema (if you maintain migrations)
+- `npm run db:studio` – open Drizzle Studio
 
 ## License
-This project is licensed under the MIT License.
+MIT
