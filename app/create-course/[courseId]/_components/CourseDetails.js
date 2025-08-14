@@ -1,5 +1,5 @@
 import React from "react";
-import { HiOutlineChartBar, HiOutlinePlayCircle, HiOutlineClock, HiOutlineBookOpen} from "react-icons/hi2";
+import { HiOutlineChartBar, HiOutlinePlayCircle, HiOutlineBookOpen} from "react-icons/hi2";
 
 const CourseDetails = ({ course }) => {
   return (
@@ -12,13 +12,7 @@ const CourseDetails = ({ course }) => {
             <h2 className="font-medium text-lg">{course?.level}</h2>
           </div>
         </div>
-        <div className="flex gap-2 items-center">
-          <HiOutlineClock   className="text-4xl text-primary" />
-          <div>
-            <h2 className="text-xs text-gray-500">Duration</h2>
-            <h2 className="font-medium text-lg">{course?.courseOutput?.course?.duration}</h2>
-          </div>
-        </div>
+  {/* Duration removed */}
         <div className="flex gap-2 items-center" >
           <HiOutlineBookOpen  className="text-4xl text-primary" />
           <div>

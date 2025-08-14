@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { HiOutlineBookOpen } from "react-icons/hi2";
 import { HiMiniEllipsisVertical } from "react-icons/hi2";
 import DropdownOption from './DropdownOption';
@@ -21,6 +21,20 @@ function CourseCard({course,refreshData,displayUser=false}) {
             refreshData()
         }
     }
+
+    // Extract chapter names (support multiple shapes, legacy, direct array, or embedded in content).
+    const chapterNames = useMemo(()=>{
+        // Try enriched chapters first (from DB fallback)
+        if (course?._enrichedChapters?.length) {
+            return course._enrichedChapters.map(c => c?.name || 'Unnamed Chapter');
+        }
+        
+        let chapters = course?.courseOutput?.course?.chapters || course?.courseOutput?.chapters;
+        if(Array.isArray(chapters)){
+            return chapters.map((c,i)=> c?.name || `Chapter ${i+1}`);
+        }
+        return [];
+    },[course]);
 
     return (
         <div className='shadow-sm rounded-lg border p-2 cursor-pointer mt-4 hover:border-primary bg-card text-card-foreground'>
@@ -44,6 +58,19 @@ function CourseCard({course,refreshData,displayUser=false}) {
                 <h2 className='text-sm bg-purple-50 dark:bg-neutral-800/80 text-primary p-1 rounded-sm'>{course?.level}</h2>
             
             </div>
+            {chapterNames.length>0 && (
+                <div className='mt-2'>
+                    <p className='text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1'>Topics</p>
+                    <div className='flex flex-wrap gap-1 max-h-16 overflow-hidden'>
+                        {chapterNames.slice(0,8).map((name,i)=>(
+                            <span key={i} className='text-[10px] bg-muted dark:bg-neutral-800 px-2 py-0.5 rounded-full border border-border line-clamp-1 max-w-[110px] whitespace-nowrap overflow-hidden text-ellipsis'>
+                                {name}
+                            </span>
+                        ))}
+                        {chapterNames.length>8 && <span className='text-[10px] text-gray-500'>+{chapterNames.length-8} more</span>}
+                    </div>
+                </div>
+            )}
           {!displayUser&&  <div className='flex gap-2 items-center mt-2'>
                 <Image alt="placeholder"  src={course?.userProfileImage} width={35} height={35}
                 className='rounded-full'

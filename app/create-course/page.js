@@ -47,7 +47,7 @@ const CreateCourse = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const { userCourseInput, setUserCourseInput } = useContext(UserInputContext);
-  const {user} = useUser();
+  const { user, isLoaded: userLoaded, isSignedIn } = useUser();
   const router=useRouter();
   useEffect(() => {
     console.log(userCourseInput);
@@ -62,7 +62,7 @@ const CreateCourse = () => {
     }
     if(activeIndex == 1 && (userCourseInput?.topic?.length == 0 || userCourseInput?.topic == undefined )){
       return true;
-    }else if(activeIndex == 2 && (userCourseInput?.level == undefined || userCourseInput?.duration == undefined|| userCourseInput?.displayVideo == undefined || userCourseInput?.noOfChapters == undefined)){
+  }else if(activeIndex == 2 && (userCourseInput?.level == undefined || userCourseInput?.displayVideo == undefined || userCourseInput?.noOfChapters == undefined)){
       return true
     }
     return false;
@@ -71,8 +71,13 @@ const CreateCourse = () => {
   const GenerateCourseLayout = async () => {
     setError(null)
     setLoading(true)
-    const BASIC_PROMPT = 'Generate A Course Tutorial on Following Detail With field as Course Name, Description, Along with Chapter'
-    const USER_INPUT_PROMPT = `Category: ${userCourseInput?.category}, Topic: ${userCourseInput?.topic}, Level:${userCourseInput?.level}, Duration: ${userCourseInput?.duration}, NoOf Chapters:${userCourseInput?.noOfChapters}`
+    const BASIC_PROMPT = 'Generate a structured programming course JSON with fields: course.name, course.description, course.noOfChapters, course.level, course.chapters (array of {name, about, difficultyTag}). Do NOT include duration anywhere.'
+    const levelGuidance = userCourseInput?.level === 'Beginner'
+      ? 'Chapters should start from absolute basics, incremental small concepts.'
+      : userCourseInput?.level === 'Intermediate'
+        ? 'Assume fundamentals known; focus on applied patterns, problem-solving, deeper concepts.'
+        : 'Assume strong base; focus on advanced architecture, optimization, scalability, edge cases.';
+    const USER_INPUT_PROMPT = ` Category: ${userCourseInput?.category}; Topic: ${userCourseInput?.topic}; Level: ${userCourseInput?.level}; NoOfChapters: ${userCourseInput?.noOfChapters}. ${levelGuidance} Ensure each chapter name is concise and unique.`
     const FINAL_PROMPT = BASIC_PROMPT + USER_INPUT_PROMPT
     console.log(FINAL_PROMPT);
     try {
@@ -94,21 +99,46 @@ const CreateCourse = () => {
   }
   
   const SaveCourseLayoutInDb = async (courseLayout) => {
-    var id = uuidv4();
-    setLoading(true)
-    const res = await db.insert(CourseList).values({
-      courseId: id,
-      name:userCourseInput?.topic,
-      level:userCourseInput?.level,
-      category:userCourseInput?.category,
-      courseOutput:courseLayout,
-      createdBy:user?.primaryEmailAddress?.emailAddress,
-      userName:user?.fullName,
-      userProfileImage:user?.imageUrl
-    })
-    console.log("Finish");
-    setLoading(false);
-    router.replace('/create-course/'+id)
+    // Ensure auth context is ready
+    if (!userLoaded) {
+      setError('User not loaded yet. Please wait a second and retry.');
+      return;
+    }
+    if (!isSignedIn) {
+      setError('You must be signed in to save a course.');
+      return;
+    }
+    const createdBy = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || user?.id;
+    if (!createdBy) {
+      setError('Unable to resolve user identity for saving course.');
+      return;
+    }
+    // Validate required course input again defensively
+    if (!userCourseInput?.topic || !userCourseInput?.level || !userCourseInput?.category) {
+      setError('Missing required course details. Please complete all fields.');
+      return;
+    }
+    try {
+      const id = uuidv4();
+      setLoading(true);
+      await db.insert(CourseList).values({
+        courseId: id,
+        name: userCourseInput.topic,
+        level: userCourseInput.level,
+        category: userCourseInput.category,
+        courseOutput: courseLayout,
+        createdBy,
+        userName: user?.fullName || null,
+        userProfileImage: user?.imageUrl || null,
+      });
+      console.log("Finish");
+      setLoading(false);
+      router.replace('/create-course/' + id);
+    } catch (e) {
+      console.error('DB insert failed', e);
+      setLoading(false);
+      setError('Failed to save course. Please retry.');
+    }
   }
   
   return (

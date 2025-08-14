@@ -27,8 +27,8 @@ function Explore() {
       <p>Explore more project build with AI by other users</p>
 
       <div className='grid grid-cols-2 lg:grid-cols-3 gap-5'>
-        {courseList?.length>0?courseList?.map((course,index)=>(
-          <div>
+        {courseList?.length>0?courseList?.map((course)=>(
+          <div key={course.id || course.courseId}>
             <CourseCard course={course} />
           </div>
         )):

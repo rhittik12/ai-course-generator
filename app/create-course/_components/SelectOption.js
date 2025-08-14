@@ -37,33 +37,13 @@ const SelectOption = () => {
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <label htmlFor="" className="text-sm">
-            Course Duration
-          </label>
-          <Select 
-          defaultValue={userCourseInput?.duration}
-          onValueChange={(value) => handleInputChange('duration', value)}>
-            <SelectTrigger className="">
-              <SelectValue placeholder="Select" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Yes">1 Hours</SelectItem>
-              <SelectItem value="2 Hours">2 Hours</SelectItem>
-              <SelectItem value="More than 3 Hours">
-                More than 3 Hours
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+  {/* Duration removed */}
         <div>
           <label htmlFor="" className="text-sm">
             Add Video
           </label>
           <Select 
           defaultValue={userCourseInput?.displayVideo}
-          
-          
           onValueChange={(value) => handleInputChange('displayVideo', value)}>
             <SelectTrigger className="">
               <SelectValue placeholder="Select" />

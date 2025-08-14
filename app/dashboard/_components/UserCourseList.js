@@ -4,7 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import { desc, eq } from "drizzle-orm";
 import React, { useContext, useEffect, useState } from "react";
 import CourseCard from "./CourseCard";
-import { CourseList } from '@/configs/schema'
+import { CourseList, Chapters } from '@/configs/schema'
 import { UserCourseListContext } from "@/app/_context/UserCourseListContext";
 
 const UserCourseList = () => {
@@ -20,9 +20,35 @@ const UserCourseList = () => {
     const result=await db.select().from(CourseList)
     .where(eq(CourseList?.createdBy,user?.primaryEmailAddress?.emailAddress))
     .orderBy(desc(CourseList.id))
-    setCourseList(result);
-    setUserCourseList(result);
     
+    // Enrich each course with DB chapters if courseOutput lacks them
+    const enriched = await Promise.all(result.map(async (course) => {
+      const output = course?.courseOutput;
+      let chapters = output?.course?.chapters || output?.chapters || [];
+      
+      if (!Array.isArray(chapters) || chapters.length === 0) {
+        // Fallback: load from DB
+        const dbChapters = await db.select().from(Chapters)
+          .where(eq(Chapters.courseId, course.courseId))
+          .orderBy(Chapters.chapterId);
+        
+        chapters = dbChapters.map(ch => ({
+          name: ch.content?.name || `Chapter ${ch.chapterId + 1}`,
+          about: ch.content?.about || ''
+        }));
+        
+        console.log('Loaded chapters from DB for course:', course.courseId, chapters);
+      }
+      
+      return {
+        ...course,
+        _enrichedChapters: chapters
+      };
+    }));
+    
+    console.log('Final enriched courses:', enriched);
+    setCourseList(enriched);
+    setUserCourseList(enriched);
   }
 
   return (

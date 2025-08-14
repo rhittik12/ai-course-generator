@@ -1,7 +1,7 @@
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
-import GoogleOneTapClient from './_components/GoogleOneTapClient';
+import GoogleOneTapWrapper from './_components/GoogleOneTapWrapper';
 import { Analytics } from "@vercel/analytics/react"
 
 const inter = Outfit({ subsets: ["latin"] });
@@ -16,8 +16,8 @@ export default function RootLayout({ children }) {
     <html lang="en">
   <body className={`${inter.className} min-h-screen antialiased bg-gradient-to-b from-white via-purple-50/40 to-white dark:from-[#0b0b10] dark:via-[#0b0b12] dark:to-[#0b0b10]` }>
         <ClerkProvider>
-          <GoogleOneTapClient />
           {children}
+          <GoogleOneTapWrapper />
         </ClerkProvider>
       </body>
     </html>

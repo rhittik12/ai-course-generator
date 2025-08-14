@@ -1,7 +1,13 @@
 "use client";
-import { GoogleOneTap } from "@clerk/nextjs";
+import { useEffect, useState } from 'react';
+import { GoogleOneTap, useUser } from "@clerk/nextjs";
 
 export default function GoogleOneTapClient() {
-  // Render on client only to avoid SSR hydration mismatches
+  // Avoid SSR mismatch by rendering only after mount and only if user is signed out
+  const { isSignedIn, isLoaded } = useUser();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted || !isLoaded || isSignedIn) return null;
   return <GoogleOneTap />;
 }

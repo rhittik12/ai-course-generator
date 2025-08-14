@@ -6,6 +6,7 @@ import { MdOutlineExplore } from "react-icons/md";
 import { TbLogout2 } from "react-icons/tb";
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useClerk } from '@clerk/nextjs';
 import { BsFillSuitcaseLgFill } from "react-icons/bs";
 
 const SideBar = () => {
@@ -30,15 +31,10 @@ const SideBar = () => {
       icon: <BsFillSuitcaseLgFill />      ,
       path: '/dashboard/jobs',
     },
-    {
-      id: 4,
-      name: 'Logout',
-      icon: <TbLogout2 />,
-      path: '/dashboard/logout',
-    },
   ];
 
   const path = usePathname();
+  const { signOut } = useClerk();
 
   return (
     <div className="fixed h-full md:w-64 p-5 shadow-md">
@@ -59,6 +55,15 @@ const SideBar = () => {
             </Link>
           </li>
         ))}
+        <li key="logout">
+          <button
+            onClick={() => signOut({ redirectUrl: '/' })}
+            className="w-full flex items-center gap-2 text-gray-600 p-3 cursor-pointer hover:bg-gray-100 hover:text-black rounded-lg mb-3 text-left"
+          >
+            <div className="text-2xl"><TbLogout2 /></div>
+            <h2>Logout</h2>
+          </button>
+        </li>
       </ul>
   {/* Removed upgrade quota/progress UI */}
     </div>
